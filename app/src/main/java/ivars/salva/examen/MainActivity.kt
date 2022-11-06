@@ -1,11 +1,13 @@
 package ivars.salva.examen
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -15,7 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,6 +28,7 @@ import androidx.compose.ui.window.DialogProperties
 import ivars.salva.examen.ui.theme.ExamenTheme
 
 class MainActivity : ComponentActivity() {
+    @SuppressLint("MutableCollectionMutableState")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -33,6 +38,7 @@ class MainActivity : ComponentActivity() {
             var email by remember { mutableStateOf("") }
             //var listMovies = mutableListOf<Pair<String, Int>>(Pair("Black Adam", 6), Pair("Barbarian", 8), Pair("Doctor Who", 9))
             var listMovies by remember{ mutableStateOf(mutableListOf<Pair<String, Int>>())}
+            var listMoviesFav by remember{ mutableStateOf(mutableListOf<Pair<String, Int>>())}
             listMovies.add(Pair("Black Adam", 6))
             listMovies.add(Pair("Barbarian", 8))
             ExamenTheme {
@@ -75,7 +81,7 @@ fun MyScaffold(email: String, changeEmail: (String) -> Unit, usuario: String, ch
     Scaffold(
         topBar = { MyTopAppBar()},
         scaffoldState = scaffoldState,
-        bottomBar = { MyBottomNavigation(cambiarVista0, cambiarVista1, cambiarVista2)},
+        bottomBar = { MyBottomNavigation(nVista,cambiarVista0, cambiarVista1, cambiarVista2)},
         content = { MyContent(nVista, email, changeEmail ,usuario, changeUsuario, password, changePassword, listMovies, cambiarVista0,cambiarVista1, cambiarVista2, cambiarVista3)}
     )
 }
@@ -83,7 +89,7 @@ fun MyScaffold(email: String, changeEmail: (String) -> Unit, usuario: String, ch
 @Composable
 fun MyContent(nVista: Int, email: String, changeEmail: (String) -> Unit, usuario: String, changeUsuario: (String) -> Unit, password: String, changePassword: (String) -> Unit, listMovies: List<Pair<String, Int>>, cambiarVista0: () -> Unit, cambiarVista1: () -> Unit, cambiarVista2: () -> Unit, cambiarVista3: () -> Unit){
     if(nVista == 0){
-        MyUserLogin(usuario,changeUsuario, password, changePassword, nVista,  cambiarVista1, cambiarVista3)
+        MyUserLogin(usuario,changeUsuario, password, changePassword, cambiarVista1, cambiarVista3)
     }
     if (nVista == 1){
         MyFavoritas(listMovies)
@@ -106,14 +112,14 @@ fun MyRegistrarse(usuario: String, changeUsuario: (String) -> Unit, password: St
     var historicas by remember { mutableStateOf(false) }
     var scifi by remember { mutableStateOf(false) }
     var documentales by remember { mutableStateOf(false) }
-    Column() {
+    Column(Modifier.padding(start = 30.dp, top = 20.dp)) {
         MyTextField(usuario, "Nombre", changeUsuario)
         Spacer(modifier = Modifier.padding(top = 10.dp))
         MyTextField(email, "Email", changeEmail)
         Spacer(modifier = Modifier.padding(top = 10.dp))
-        MyTextField(name = password, texto = "Contraseña", onValueChanged = changePassword )
+        MyTextFieldPassword(name = password, texto = "Contraseña", onValueChanged = changePassword )
         Spacer(modifier = Modifier.padding(top = 10.dp))
-        MyTextField(name = repitePassword, texto ="Repite la contraseña", onValueChanged = {repitePassword = it})
+        MyTextFieldPassword(name = repitePassword, texto ="Repite la contraseña", onValueChanged = {repitePassword = it})
         Spacer(modifier = Modifier.padding(top = 20.dp))
         Text("Intereses", Modifier.padding(start = 10.dp))
         Spacer(modifier = Modifier.padding(top = 20.dp))
@@ -131,12 +137,12 @@ fun MyRegistrarse(usuario: String, changeUsuario: (String) -> Unit, password: St
             onChangeScifi = {scifi = it},
             onChangeDocumentales = {documentales = it}
         )
-        Button(onClick = {
+        Button( modifier = Modifier.width(400.dp).padding(end = 30.dp), onClick = {
             if(password == repitePassword && email.isNotEmpty() && usuario.isNotEmpty()){
                 cambiarVista1()
             }
         }) {
-            Text("Enviar")
+            Text("Registrarse")
         }
     }
 }
@@ -219,37 +225,39 @@ fun MyCardDelete(name:String, nStars: String){
         Row(Modifier.padding(start = 1.dp, top = 4.dp)) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_launcher_background),
-                contentDescription = "Imagen de perfil",
+                contentDescription = "",
                 modifier = Modifier
                     .size(60.dp)
                     .clip(
                         CircleShape
                     )
             )
-            Column(Modifier.padding(start = 40.dp, top = 10.dp)) {
-                Text(name)
-                Row() {
-                    Icon(
-                        imageVector = Icons.Filled.Star, contentDescription = "star",
-                        Modifier
-                            .size(20.dp)
-                            .padding(top = 1.dp)
-                    )
-                    Text(text = nStars, fontSize = 12.sp, modifier = Modifier.padding(top = 3.dp))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()){
+                Column(Modifier.padding(start = 20.dp, top = 7.dp)) {
+                    Text(name)
+                    Row {
+                        Icon(
+                            imageVector = Icons.Filled.Star, contentDescription = "star",
+                            Modifier
+                                .size(20.dp)
+                                .padding(top = 1.dp)
+                        )
+                        Text(text = nStars, fontSize = 12.sp, modifier = Modifier.padding(top = 3.dp))
+                    }
                 }
-            }
-            Row(horizontalArrangement = Arrangement.End) {
                 IconButton(
-                    onClick = { /*TODO*/ },
-                    modifier = Modifier
-                        .padding(top = 5.dp)
-                        .weight(1f)
+                    onClick = {
+                    },
+                    Modifier.padding(top = 7.dp)
                 ) {
                     Icon(imageVector = Icons.Filled.Delete, contentDescription = "delete")
                 }
+
             }
         }
+
     }
+
 }
 
 @Composable
@@ -261,37 +269,39 @@ fun MyCard(name:String, nStars:String){
         Row(Modifier.padding(start = 1.dp, top = 4.dp)) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_launcher_background),
-                contentDescription = "Imagen de perfil",
+                contentDescription = "",
                 modifier = Modifier
                     .size(60.dp)
                     .clip(
                         CircleShape
                     )
             )
-            Column(Modifier.padding(start = 40.dp, top = 10.dp)) {
-                Text(name)
-                Row() {
-                    Icon(
-                        imageVector = Icons.Filled.Star, contentDescription = "star",
-                        Modifier
-                            .size(20.dp)
-                            .padding(top = 1.dp)
-                    )
-                    Text(text = nStars, fontSize = 12.sp, modifier = Modifier.padding(top = 3.dp))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()){
+                Column(Modifier.padding(start = 20.dp, top = 7.dp)) {
+                    Text(name)
+                    Row {
+                        Icon(
+                            imageVector = Icons.Filled.Star, contentDescription = "stars",
+                            Modifier
+                                .size(20.dp)
+                                .padding(top = 1.dp)
+                        )
+                        Text(text = nStars, fontSize = 12.sp, modifier = Modifier.padding(top = 3.dp))
+                    }
                 }
-            }
-            Row(horizontalArrangement = Arrangement.End) {
                 IconButton(
-                    onClick = { /*TODO*/ },
-                    modifier = Modifier
-                        .padding(top = 5.dp)
-                        .weight(1f)
+                    onClick = {
+                    },
+                    Modifier.padding(top = 7.dp)
                 ) {
                     Icon(imageVector = Icons.Filled.Add, contentDescription = "add")
                 }
+
             }
         }
+
     }
+
 }
 @Composable
 fun MyFavoritas( listMovies: List<Pair<String, Int>>){
@@ -304,7 +314,8 @@ fun MyFavoritas( listMovies: List<Pair<String, Int>>){
 }
 
 @Composable
-fun MyUserLogin(usuario: String,changeUsuario: (String) -> Unit, password: String, changePassword: (String) -> Unit, nVista: Int, nVistaCambiar: () -> Unit, cambiarVista3: () -> Unit){
+fun MyUserLogin(usuario: String,changeUsuario: (String) -> Unit, password: String, changePassword: (String) -> Unit, nVistaCambiar: () -> Unit, cambiarVista3: () -> Unit){
+    var passwordVisible by remember { mutableStateOf(false) }
     Dialog(
         onDismissRequest = {},
         properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
@@ -316,20 +327,49 @@ fun MyUserLogin(usuario: String,changeUsuario: (String) -> Unit, password: Strin
                 .fillMaxWidth()
         ) {
             Spacer(Modifier.padding(top = 20.dp))
-            MyTextField(usuario, "Nombre", changeUsuario)
+
+            TextField(
+                value = usuario,
+                onValueChange = {changeUsuario(it)},
+                label = { Text(text = "Nombre")},
+                leadingIcon = {
+                    Icon(imageVector = Icons.Filled.Person, contentDescription = "usuario")
+                },
+                modifier = Modifier
+                    .background(Color.White)
+            )
+            Spacer(modifier = Modifier.padding(top=2.dp))
+
             Spacer(modifier = Modifier.padding(top = 10.dp))
-            MyTextFieldPassword(password, "Contraseña", changePassword)
+
+            TextField(
+                value = password,
+                onValueChange = {changePassword(it)},
+                label = { Text(text = "Contraseña")},
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    val image = if (passwordVisible)
+                        Icons.Filled.Star
+                    else Icons.Filled.Clear
+                    IconButton(onClick = {passwordVisible = !passwordVisible}){
+                        Icon(imageVector = image, contentDescription = "password")
+                    }
+                },
+                modifier = Modifier
+                    .background(Color.White)
+            )
+            Spacer(modifier = Modifier.padding(top=2.dp))
+
             Spacer(Modifier.padding(top = 20.dp))
-            Button(onClick = {
+            Button(modifier = Modifier.padding(start = 95.dp), onClick = {
                 if(usuario.isNotEmpty() && password.isNotEmpty())
                     nVistaCambiar()
 
             }) {
                 Text("Entrar")
             }
-            Button(onClick = { cambiarVista3() }) {
-                Text("¿Aún no estas registrado?")
-            }
+
+            ClickableText(text = AnnotatedString("¿Aún no estás registrado?"), onClick = {cambiarVista3()}, modifier = Modifier.padding(start = 60.dp))
         }
     }
 }
@@ -358,18 +398,18 @@ fun MyTopAppBar(){
 }
 
 @Composable
-fun MyBottomNavigation(cambiarVista0: () -> Unit,cambiarVista1: () -> Unit,cambiarVista2: () -> Unit){
+fun MyBottomNavigation(nVista: Int, cambiarVista0: () -> Unit,cambiarVista1: () -> Unit,cambiarVista2: () -> Unit){
     BottomNavigation(
         backgroundColor = Color.Red,
         contentColor = Color.White,
     ) {
-        BottomNavigationItem(selected = false, onClick = cambiarVista1, icon = {
+        BottomNavigationItem(selected = false, onClick = {if (nVista != 3) cambiarVista1()}, icon = {
             Icon(
                 imageVector = Icons.Default.Home,
                 contentDescription = "home"
             )
         })
-        BottomNavigationItem(selected = false, onClick = cambiarVista2, icon = {
+        BottomNavigationItem(selected = false, onClick = {if (nVista != 3) cambiarVista2()}, icon = {
             Icon(
                 imageVector = Icons.Default.Favorite,
                 contentDescription = "favorite"
