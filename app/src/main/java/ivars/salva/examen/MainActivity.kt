@@ -20,7 +20,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -36,13 +35,21 @@ class MainActivity : ComponentActivity() {
             var usuario by remember { mutableStateOf("") }
             var password by remember { mutableStateOf("") }
             var email by remember { mutableStateOf("") }
+            var title by remember { mutableStateOf("") }
+            var score by remember { mutableStateOf(0) }
             //var listMovies = mutableListOf<Pair<String, Int>>(Pair("Black Adam", 6), Pair("Barbarian", 8), Pair("Doctor Who", 9))
             var listMovies by remember{ mutableStateOf(mutableListOf<Pair<String, Int>>())}
             var listMoviesFav by remember{ mutableStateOf(mutableListOf<Pair<String, Int>>())}
             listMovies.add(Pair("Black Adam", 6))
             listMovies.add(Pair("Barbarian", 8))
+            listMoviesFav.add(Pair("Black Adam", 6))
+            listMoviesFav.add(Pair("Barbarian", 8))
             ExamenTheme {
-                MyScaffold(email, {email = it},usuario, {usuario = it}, password, {password = it},  nVista, listMovies, { nVista = 0 }, { nVista = 1 }, { nVista = 2 }, {nVista = 3} )
+                MyScaffold(email, {email = it},usuario, {usuario = it}, password, {password = it},  nVista, listMovies, { nVista = 0 }, { nVista = 1 }, { nVista = 2 }, {nVista = 3},{ listMoviesFav.add(Pair(title, score)) },{
+                    listMoviesFav.remove(
+                        Pair(title, score)
+                    )
+                }, title,  {title = it}, score) { score = it }
             }
         }
     }
@@ -76,26 +83,64 @@ fun MyTextFieldPassword(name: String, texto: String, onValueChanged: (String) ->
 }
 //
 @Composable
-fun MyScaffold(email: String, changeEmail: (String) -> Unit, usuario: String, changeUsuario: (String) -> Unit, password: String, changePassword: (String) -> Unit, nVista: Int, listMovies: List<Pair<String, Int>>, cambiarVista0: () -> Unit, cambiarVista1: () -> Unit, cambiarVista2: () -> Unit, cambiarVista3: () -> Unit){
+fun MyScaffold(
+    email: String,
+    changeEmail: (String) -> Unit,
+    usuario: String,
+    changeUsuario: (String) -> Unit,
+    password: String,
+    changePassword: (String) -> Unit,
+    nVista: Int,
+    listMovies: List<Pair<String, Int>>,
+    cambiarVista0: () -> Unit,
+    cambiarVista1: () -> Unit,
+    cambiarVista2: () -> Unit,
+    cambiarVista3: () -> Unit,
+    addFavFilm: () -> Boolean,
+    removeFavFilm: () -> Boolean,
+    title: String,
+    changeTitle: (String) -> Unit,
+    score: Int,
+    changeScore: (Int) -> Unit
+){
     val scaffoldState = rememberScaffoldState()
     Scaffold(
         topBar = { MyTopAppBar()},
         scaffoldState = scaffoldState,
         bottomBar = { MyBottomNavigation(nVista,cambiarVista0, cambiarVista1, cambiarVista2)},
-        content = { MyContent(nVista, email, changeEmail ,usuario, changeUsuario, password, changePassword, listMovies, cambiarVista0,cambiarVista1, cambiarVista2, cambiarVista3)}
+        content = { MyContent(nVista, email, changeEmail ,usuario, changeUsuario, password, changePassword, listMovies, cambiarVista0,cambiarVista1, cambiarVista2, cambiarVista3, addFavFilm, removeFavFilm, title, changeTitle, score, changeScore)}
     )
 }
 
 @Composable
-fun MyContent(nVista: Int, email: String, changeEmail: (String) -> Unit, usuario: String, changeUsuario: (String) -> Unit, password: String, changePassword: (String) -> Unit, listMovies: List<Pair<String, Int>>, cambiarVista0: () -> Unit, cambiarVista1: () -> Unit, cambiarVista2: () -> Unit, cambiarVista3: () -> Unit){
+fun MyContent(
+    nVista: Int,
+    email: String,
+    changeEmail: (String) -> Unit,
+    usuario: String,
+    changeUsuario: (String) -> Unit,
+    password: String,
+    changePassword: (String) -> Unit,
+    listMovies: List<Pair<String, Int>>,
+    cambiarVista0: () -> Unit,
+    cambiarVista1: () -> Unit,
+    cambiarVista2: () -> Unit,
+    cambiarVista3: () -> Unit,
+    addFavFilm: () -> Boolean,
+    removeFavFilm: () -> Boolean,
+    title: String,
+    changeTitle: (String) -> Unit,
+    score: Int,
+    changeScore: (Int) -> Unit
+){
     if(nVista == 0){
         MyUserLogin(usuario,changeUsuario, password, changePassword, cambiarVista1, cambiarVista3)
     }
     if (nVista == 1){
-        MyFavoritas(listMovies)
+        MyFavoritas(listMovies, addFavFilm, title, changeTitle, score, changeScore)
     }
     if (nVista == 2){
-        MyHome(listMovies)
+        MyHome(listMovies, removeFavFilm, title, changeTitle, score, changeScore)
     }
 
     if(nVista == 3){
@@ -207,17 +252,32 @@ fun MyCheckBoxes(
 }
 
 @Composable
-fun MyHome(listMovies: List<Pair<String, Int>>){
+fun MyHome(
+    listMovies: List<Pair<String, Int>>,
+    removeFavFilm: () -> Boolean,
+    title: String,
+    changeTitle: (String) -> Unit,
+    score: Int,
+    changeScore: (Int) -> Unit
+){
     Column(Modifier.padding(start = 2.dp)) {
         listMovies.forEach{ item ->
-            MyCardDelete(item.first, item.second.toString())
+            MyCardDelete(item.first, item.second.toString(), removeFavFilm, title, score, changeTitle, changeScore)
             Spacer(modifier = Modifier.padding(bottom = 2.dp))
         }
     }
 }
 
 @Composable
-fun MyCardDelete(name:String, nStars: String){
+fun MyCardDelete(
+    name: String,
+    nStars: String,
+    removeFavFilm: () -> Boolean,
+    title: String,
+    score: Int,
+    changeTitle: (String) -> Unit,
+    changeScore: (Int) -> Unit
+){
     Card(elevation = 10.dp,modifier = Modifier
         .fillMaxWidth()
         .height(70.dp))
@@ -247,7 +307,12 @@ fun MyCardDelete(name:String, nStars: String){
                 }
                 IconButton(
                     onClick = {
-                    },
+                        changeTitle(title)
+                        changeScore(score)
+                        removeFavFilm()
+                        changeTitle("")
+                        changeScore(0)
+                              },
                     Modifier.padding(top = 7.dp)
                 ) {
                     Icon(imageVector = Icons.Filled.Delete, contentDescription = "delete")
@@ -304,7 +369,14 @@ fun MyCard(name:String, nStars:String){
 
 }
 @Composable
-fun MyFavoritas( listMovies: List<Pair<String, Int>>){
+fun MyFavoritas(
+    listMovies: List<Pair<String, Int>>,
+    removeFavFilm: () -> Boolean,
+    title: String,
+    score: (String) -> Unit,
+    score1: Int,
+    changeScore: (Int) -> Unit
+){
     Column(Modifier.padding(start = 2.dp)) {
         listMovies.forEach{ item ->
             MyCard(item.first, item.second.toString())
